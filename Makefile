@@ -1,4 +1,4 @@
-.PHONY: up down rebuild logs \
+.PHONY: up down rebuild logs sync-deps \
         test-connect test-subscribe test-publish test-auth test-all
 
 up:
@@ -15,6 +15,9 @@ logs:
 
 logs-rabbitmq:
 	podman logs -f aero-rabbitmq
+
+sync-deps:
+	uv lock && uv export --locked --format requirements-txt -o auth/requirements.txt
 
 test-connect:
 	uv run python3 tests/test_connect.py

@@ -78,8 +78,11 @@ make rebuild
 # Logs
 make logs
 
-# Auth backend logs only
-make logs-auth
+# RabbitMQ logs only
+make logs-rabbitmq
+
+# Sync Python deps (regenerate uv.lock + requirements.txt)
+make sync-deps
 
 # Stop
 podman-compose stop
