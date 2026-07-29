@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  auth:
+    build: auth
+    container_name: aero-auth
+    network_mode: host
+    environment:
+      - AUTH_API_KEY=${AUTH_API_KEY:-changeme}
+    env_file:
+      - auth/.env
+
+  rabbitmq:
+    build: rabbitmq
+    container_name: aero-rabbitmq
+    network_mode: host
+    environment:
+      - AUTH_API_KEY=${AUTH_API_KEY:-changeme}
+    env_file:
+      - auth/.env
+    depends_on:
+      - auth
