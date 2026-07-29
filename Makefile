@@ -9,11 +9,11 @@ down:
 	podman-compose down
 
 rebuild-auth:
-	podman build -t aero_radio2_auth -f auth/Dockerfile auth/ && \
+	podman build -t aero_radio_auth -f auth/Dockerfile auth/ && \
 	podman-compose down && podman-compose up -d
 
 rebuild-rabbitmq:
-	podman build -t aero_radio2_rabbitmq -f rabbitmq/Dockerfile rabbitmq/ && \
+	podman build -t aero_radio_rabbitmq -f rabbitmq/Dockerfile rabbitmq/ && \
 	podman-compose down && podman-compose up -d
 
 logs:

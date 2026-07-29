@@ -1,4 +1,5 @@
 version: "3.8"
+name: aero_radio
 
 services:
   auth:
