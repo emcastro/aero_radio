@@ -9,27 +9,27 @@ delegated via RabbitMQ's HTTP Auth Backend to a FastAPI service.
 ## Components
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Host (network_mode: host)                  │
+┌───────────────────────────────────────────────────────────────────┐
+│                       Host (network_mode: host)                    │
 │                                                                   │
-│  ┌─────────────────────┐          ┌──────────────────────────┐    │
-│  │      RabbitMQ        │  HTTP   │    FastAPI Auth Backend   │    │
-│  │                      │◄────────│                          │    │
-│  │  Ports:              │  auth   │  POST /auth/user          │    │
-│  │  1883  MQTT (debug)  │          │  POST /auth/vhost        │    │
-│  │  8883  MQTTS (mTLS)  │          │  POST /auth/resource     │    │
-│  │  5672  AMQP          │          │  POST /auth/topic        │    │
-│  │  15672 Management UI │          │  Port 8000 (127.0.0.1)   │    │
-│  └──────────┬───────────┘          └──────────────────────────┘    │
-│             │                                                      │
-│             │ mQTTS :8883 (mTLS with client cert)                  │
-│             │                                                      │
-│  ┌──────────┴───────────┐                                         │
-│  │  External Clients     │                                         │
-│  │  (IoT devices via     │                                         │
-│  │   SIM7600, consumers) │                                         │
-│  └──────────────────────┘                                         │
-└──────────────────────────────────────────────────────────────────┘
+│  ┌────────────────────────┐      ┌───────────────────────────┐    │
+│  │        RabbitMQ         │ HTTP │    FastAPI Auth Backend   │    │
+│  │                         │◄─────│                           │    │
+│  │  Ports:                 │ auth │  POST /auth/user          │    │
+│  │  1883  MQTT (debug)     │      │  POST /auth/vhost        │    │
+│  │  8883  MQTTS (mTLS)     │      │  POST /auth/resource     │    │
+│  │  5672  AMQP             │      │  POST /auth/topic        │    │
+│  │  15672 Management UI    │      │  Port 8000 (127.0.0.1)   │    │
+│  └───────────┬─────────────┘      └───────────────────────────┘    │
+│              │                                                     │
+│              │ MQTTS :8883 (mTLS with client cert)                 │
+│              │                                                     │
+│  ┌───────────┴─────────────┐                                      │
+│  │    External Clients      │                                      │
+│  │  (IoT devices via       │                                      │
+│  │   SIM7600, consumers)   │                                      │
+│  └─────────────────────────┘                                      │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 ## Authentication Flow
@@ -60,7 +60,7 @@ A device certificate's Common Name (CN) must match a key in the auth backend's `
 | 1883 | MQTT     | RabbitMQ | TCP (debug only, remove in production) |
 | 8883 | MQTTS    | RabbitMQ | mTLS required (device-facing) |
 | 5672 | AMQP     | RabbitMQ | For external consumers |
-| 15672| HTTP     | RabbitMQ | Management UI (admin/admin) |
+| 15672 | HTTP     | RabbitMQ | Management UI (admin/admin) |
 | 8000 | HTTP     | Auth     | Internal auth backend (127.0.0.1 only) |
 
 ## Development Setup
