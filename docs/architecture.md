@@ -10,25 +10,25 @@ delegated via RabbitMQ's HTTP Auth Backend to a FastAPI service.
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│                       Host (network_mode: host)                    │
+│ Host (network_mode: host)                                         │
 │                                                                   │
-│  ┌────────────────────────┐      ┌───────────────────────────┐    │
-│  │        RabbitMQ         │ HTTP │    FastAPI Auth Backend   │    │
-│  │                         │◄─────│                           │    │
-│  │  Ports:                 │ auth │  POST /auth/user          │    │
-│  │  1883  MQTT (debug)     │      │  POST /auth/vhost        │    │
-│  │  8883  MQTTS (mTLS)     │      │  POST /auth/resource     │    │
-│  │  5672  AMQP             │      │  POST /auth/topic        │    │
-│  │  15672 Management UI    │      │  Port 8000 (127.0.0.1)   │    │
-│  └───────────┬─────────────┘      └───────────────────────────┘    │
-│              │                                                     │
-│              │ MQTTS :8883 (mTLS with client cert)                 │
-│              │                                                     │
-│  ┌───────────┴─────────────┐                                      │
-│  │    External Clients      │                                      │
-│  │  (IoT devices via       │                                      │
-│  │   SIM7600, consumers)   │                                      │
-│  └─────────────────────────┘                                      │
+│  ┌──────────────────────┐      ┌─────────────────────────┐        │
+│  │       RabbitMQ       │ auth │  FastAPI Auth Backend   │        │
+│  │                      │◄─────│                         │        │
+│  │  Ports:              │      │  POST /auth/user        │        │
+│  │  1883  MQTT (debug)  │      │  POST /auth/vhost       │        │
+│  │  8883  MQTTS (mTLS)  │      │  POST /auth/resource    │        │
+│  │  5672  AMQP          │      │  POST /auth/topic       │        │
+│  │  15672 Management UI │      │  Port 8000 (127.0.0.1)  │        │
+│  └───────────┬──────────┘      └─────────────────────────┘        │
+│              │                                                    │
+│              │ MQTTS :8883 (mTLS with client cert)                │
+│              │                                                    │
+│  ┌───────────┴──────────┐                                         │
+│  │  External Clients    │                                         │
+│  │ (IoT devices via     │                                         │
+│  │SIM7600, consumers)   │                                         │
+│  └──────────────────────┘                                         │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
