@@ -31,6 +31,12 @@ DEVICES: dict[str, dict] = {
             "read":  ["devices/device-test-002/commands/#"],
         },
     },
+    "central": {
+        "description": "Central process consuming all telemetry",
+        "topics": {
+            "read": ["devices/+/telemetry/#"],
+        },
+    },
 }
 
 

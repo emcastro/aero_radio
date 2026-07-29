@@ -8,4 +8,5 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "pydantic>=2.10.4",
     "python-multipart>=0.0.20",
+    "paho-mqtt>=2.1.0",
 ]

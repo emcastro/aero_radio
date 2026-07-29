@@ -1,5 +1,6 @@
 .PHONY: up down rebuild logs sync-deps \
-        test-connect test-subscribe test-publish test-auth test-all
+        test-connect test-subscribe test-publish test-auth test-all \
+        run-iot run-central
 
 up:
 	podman-compose up -d
@@ -33,3 +34,9 @@ test-auth:
 
 test-all: test-connect test-subscribe test-publish test-auth
 	@echo 'All tests: PASS'
+
+run-iot:
+	uv run python3 -u clients/iot_simulator.py
+
+run-central:
+	uv run python3 -u clients/central.py
