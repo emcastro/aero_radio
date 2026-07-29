@@ -34,10 +34,13 @@ Then add the device to `auth/src/auth_backend.py` in the `DEVICES` dict.
 podman-compose build && podman-compose up -d
 
 # Rebuild auth after changes
-podman-compose build auth && podman-compose up -d auth
+make rebuild-auth
+
+# Rebuild rabbitmq after changes
+make rebuild-rabbitmq
 
 # Logs
-podman-compose logs -f
+make logs
 
 # Stop
 podman-compose stop
@@ -46,7 +49,32 @@ podman-compose stop
 podman-compose down
 ```
 
-## Quick MQTT Test
+## Testing
+
+```bash
+# Quick MQTT connect test
+make test-connect
+
+# Subscribe to commands topic
+make test-subscribe
+
+# Publish telemetry message
+make test-publish
+
+# Direct HTTP test of all 4 auth endpoints
+make test-auth
+
+# Run all of the above
+make test-all
+```
+
+Individual test scripts in `tests/` can also be run directly:
+
+```bash
+uv run python3 tests/test_auth.py
+```
+
+## E2E MQTT Test
 
 ```bash
 mosquitto_pub \
@@ -60,6 +88,8 @@ mosquitto_pub \
   -d
 ```
 
+**Important:** The MQTT CONNECT packet must include a non-empty password matching the device ID. Despite `ssl_cert_login=true` authenticating via the client certificate CN, RabbitMQ's MQTT plugin still requires a password field in the CONNECT packet. Empty password results in `"no password provided"` and CONNACK code 4.
+
 ## Critical: Auth Backend Response Format
 
 RabbitMQ's `rabbitmq_auth_backend_http` expects **plain text** responses (not JSON):
@@ -72,12 +102,24 @@ Set `response_class=PlainTextResponse` on FastAPI endpoints. JSON responses like
 
 Set `AUTH_API_KEY` via environment variable (`AUTH_API_KEY=mykey ./scripts/setup-dev.sh`). Defaults to `changeme` in `podman-compose.yml`. RabbitMQ's `rabbitmq.conf` hardcodes the value (Cuttlefish does not expand env vars). The auth service reads it from `AUTH_API_KEY` env var in its config (`src/config.py`).
 
+## Topic Auth: Dot / Slash Conversion
+
+RabbitMQ MQTT internally converts topic separator `/` to `.` when passing routing keys to the HTTP auth backend. For example, an MQTT subscribe to `devices/device-test-001/commands/#` reaches `/auth/topic` as:
+
+```
+routing_key = devices.device-test-001.commands.#
+```
+
+The auth backend's `check_topic_access` reverses this (`"."` → `"/"`) before matching against device patterns stored with `/` separators.
+
 ## Project Layout
 
 ```
+Makefile             Build + test targets
 ca/                  OpenSSL CA + device certificate scripts
 rabbitmq/            Dockerfile + config + server TLS certs
 auth/                FastAPI auth backend service
+tests/               MQTT + HTTP test scripts
 scripts/             setup script
 docs/                architecture documentation
 ```

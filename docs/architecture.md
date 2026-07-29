@@ -10,12 +10,12 @@ delegated via RabbitMQ's HTTP Auth Backend to a FastAPI service.
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│ Host (network_mode: host)                                         │
+│                       Host (network_mode: host)                   │
 │                                                                   │
 │  ┌──────────────────────┐      ┌─────────────────────────┐        │
-│  │       RabbitMQ       │ auth │  FastAPI Auth Backend   │        │
+│  │        RabbitMQ      │ HTTP │   FastAPI Auth Backend  │        │
 │  │                      │◄─────│                         │        │
-│  │  Ports:              │      │  POST /auth/user        │        │
+│  │  Ports:              │ auth │  POST /auth/user        │        │
 │  │  1883  MQTT (debug)  │      │  POST /auth/vhost       │        │
 │  │  8883  MQTTS (mTLS)  │      │  POST /auth/resource    │        │
 │  │  5672  AMQP          │      │  POST /auth/topic       │        │
@@ -25,7 +25,7 @@ delegated via RabbitMQ's HTTP Auth Backend to a FastAPI service.
 │              │ MQTTS :8883 (mTLS with client cert)                │
 │              │                                                    │
 │  ┌───────────┴──────────┐                                         │
-│  │  External Clients    │                                         │
+│  │   External Clients   │                                         │
 │  │ (IoT devices via     │                                         │
 │  │SIM7600, consumers)   │                                         │
 │  └──────────────────────┘                                         │
