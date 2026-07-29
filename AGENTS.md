@@ -1,5 +1,7 @@
 # AeroRadio2
 
+> Ne pas commiter sans ordre exprès de l'utilisateur.
+
 MQTT-based IoT messaging system with RabbitMQ, mutual TLS authentication, and a FastAPI auth backend.
 
 ## Quick Start
@@ -84,6 +86,10 @@ make logs-rabbitmq
 # Sync Python deps (regenerate uv.lock + requirements.txt)
 make sync-deps
 
+# Run clients (two terminals)
+make run-central    # central process, subscribes to devices/+/telemetry/#
+make run-iot        # IoT simulator, publishes 0..100..0
+
 # Stop
 podman-compose stop
 
@@ -143,6 +149,25 @@ mosquitto_pub \
 
 **Important:** The MQTT CONNECT packet must include a non-empty password matching the device ID. Despite `ssl_cert_login=true` authenticating via the client certificate CN, RabbitMQ's MQTT plugin still requires a password field in the CONNECT packet. Empty password results in `"no password provided"` and CONNACK code 4.
 
+## Clients
+
+Two Python client scripts are provided in `clients/`:
+
+| Script | Device | Role |
+|--------|--------|------|
+| `clients/iot_simulator.py` | `device-test-001` | Publishes ramp 0..100 then 100..0 every 0.5s on `devices/device-test-001/telemetry/value` |
+| `clients/central.py` | `central` | Subscribes to `devices/+/telemetry/#` and prints all received messages |
+
+Both connect via MQTTS (port 8883) with mTLS using `paho-mqtt` and `CallbackAPIVersion.VERSION2`.
+
+Before running `central`, generate its certificate:
+
+```bash
+./ca/generate-device-cert.sh central
+```
+
+Then add it to `auth/src/auth_backend.py`.
+
 ## Critical: Auth Backend Response Format
 
 RabbitMQ's `rabbitmq_auth_backend_http` expects **plain text** responses (not JSON):
@@ -169,6 +194,7 @@ ca/                   OpenSSL CA + device certificate scripts
 rabbitmq/             RabbitMQ config + TLS certs
 auth/                 FastAPI auth backend source code
 tests/                MQTT + HTTP test scripts
+clients/              Python client scripts (IoT simulator + central)
 scripts/              Setup script
 docs/                 Architecture documentation
 ```
