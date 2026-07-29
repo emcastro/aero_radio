@@ -1,5 +1,4 @@
-.PHONY: up down rebuild-auth rebuild-rabbitmq logs \
-        logs-auth logs-rabbitmq \
+.PHONY: up down rebuild logs \
         test-connect test-subscribe test-publish test-auth test-all
 
 up:
@@ -8,19 +7,11 @@ up:
 down:
 	podman-compose down
 
-rebuild-auth:
-	podman build -t aero_radio_auth -f auth/Dockerfile auth/ && \
-	podman-compose down && podman-compose up -d
-
-rebuild-rabbitmq:
-	podman build -t aero_radio_rabbitmq -f rabbitmq/Dockerfile rabbitmq/ && \
-	podman-compose down && podman-compose up -d
+rebuild:
+	podman-compose build && podman-compose down && podman-compose up -d
 
 logs:
 	podman-compose logs -f
-
-logs-auth:
-	podman logs -f aero-auth
 
 logs-rabbitmq:
 	podman logs -f aero-rabbitmq

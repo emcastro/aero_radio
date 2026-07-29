@@ -1,13 +1,12 @@
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
-KEY = "changeme"
 BASE = "http://localhost:8000/auth"
 
 
 def post(path: str, data: dict[str, str]) -> str:
     body = urlencode(data).encode()
-    req = Request(f"{BASE}/{path}?api_key={KEY}", data=body)
+    req = Request(f"{BASE}/{path}", data=body)
     return urlopen(req).read().decode().strip()
 
 

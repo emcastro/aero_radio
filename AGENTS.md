@@ -8,12 +8,51 @@ MQTT-based IoT messaging system with RabbitMQ, mutual TLS authentication, and a 
 ./scripts/setup-dev.sh
 ```
 
-## Services (dev only, `network_mode: host`)
+## Architecture
 
-| Service  | Ports | Auth |
-|----------|-------|------|
-| RabbitMQ | 1883 (MQTT debug), 8883 (MQTTS mTLS), 5672 (AMQP), 15672 (mgmt UI) | mTLS + HTTP auth backend |
-| Auth API | 8000 (localhost) | API key (query param) |
+Single container (`aero-rabbitmq`) running both RabbitMQ and the FastAPI auth backend. For dev only, uses `network_mode: host`.
+
+```
+┌────────────────────────────────────┐
+│  Container: aero-rabbitmq          │
+│                                    │
+│  ┌──────────┐  HTTP 127.0.0.1:8000 │
+│  │ RabbitMQ │────────────────┐     │
+│  │ (5672,   │                │     │
+│  │  15672)  │                ▼     │
+│  │          │           ┌────────┐ │
+│  │  8883 MQTTS mTLS     │ Auth   │ │
+│  │  1883 MQTT debug     │ FastAPI│ │
+│  └──────────┘           └────────┘ │
+└────────────────────────────────────┘
+```
+
+| Port | Purpose | Dev access |
+|------|---------|------------|
+| 1883 | MQTT (TCP, debug) | localhost |
+| 8883 | MQTTS (mTLS, devices) | localhost |
+| 5672 | AMQP (consumers) | localhost |
+| 15672 | Management UI (admin/admin) | localhost |
+| 8000 | Auth API (dev debug only) | localhost |
+
+## Volume Mounts (live edit)
+
+All config and Python code is mounted from the host — no rebuild needed for changes:
+
+| Host path | Container path |
+|-----------|----------------|
+| `rabbitmq/rabbitmq.conf` | `/etc/rabbitmq/rabbitmq.conf` |
+| `rabbitmq/enabled_plugins` | `/etc/rabbitmq/enabled_plugins` |
+| `rabbitmq/tls/` | `/etc/rabbitmq/tls/` |
+| `auth/src/` | `/app/auth/src/` |
+
+The Dockerfile `COPY` exists so the image is self-contained; the volumes above **override** those baked-in files at runtime. This means you can `podman run` without volumes and it still works — the mounts are a dev convenience, not a requirement.
+
+After editing code or config, just restart the container:
+
+```bash
+podman-compose restart
+```
 
 ## Management UI
 
@@ -31,16 +70,16 @@ Then add the device to `auth/src/auth_backend.py` in the `DEVICES` dict.
 
 ```bash
 # Build and start
-podman-compose build && podman-compose up -d
+make up
 
-# Rebuild auth after changes
-make rebuild-auth
-
-# Rebuild rabbitmq after changes
-make rebuild-rabbitmq
+# Rebuild and restart (e.g. after new pip deps)
+make rebuild
 
 # Logs
 make logs
+
+# Auth backend logs only
+make logs-auth
 
 # Stop
 podman-compose stop
@@ -74,6 +113,17 @@ Individual test scripts in `tests/` can also be run directly:
 uv run python3 tests/test_auth.py
 ```
 
+## Auth API Debug
+
+The auth backend listens on `0.0.0.0:8000` for dev debugging. Test directly:
+
+```bash
+curl -X POST http://localhost:8000/auth/user \
+  -d 'username=device-test-001&password='
+```
+
+**Do not expose port 8000 in production.** The auth backend is intended for internal use by RabbitMQ only.
+
 ## E2E MQTT Test
 
 ```bash
@@ -96,12 +146,6 @@ RabbitMQ's `rabbitmq_auth_backend_http` expects **plain text** responses (not JS
 - `/auth/user`: return `"allow administrator"` (valid user with management tag), `"allow"`, or `"deny"`
 - `/auth/vhost`, `/auth/resource`, `/auth/topic`: return `"allow"` or `"deny"`
 
-Set `response_class=PlainTextResponse` on FastAPI endpoints. JSON responses like `{"authenticated": true}` will cause connection rejection (CONNACK code 4).
-
-## Auth API Key
-
-Set `AUTH_API_KEY` via environment variable (`AUTH_API_KEY=mykey ./scripts/setup-dev.sh`). Defaults to `changeme` in `podman-compose.yml`. RabbitMQ's `rabbitmq.conf` hardcodes the value (Cuttlefish does not expand env vars). The auth service reads it from `AUTH_API_KEY` env var in its config (`src/config.py`).
-
 ## Topic Auth: Dot / Slash Conversion
 
 RabbitMQ MQTT internally converts topic separator `/` to `.` when passing routing keys to the HTTP auth backend. For example, an MQTT subscribe to `devices/device-test-001/commands/#` reaches `/auth/topic` as:
@@ -115,11 +159,13 @@ The auth backend's `check_topic_access` reverses this (`"."` → `"/"`) before m
 ## Project Layout
 
 ```
-Makefile             Build + test targets
-ca/                  OpenSSL CA + device certificate scripts
-rabbitmq/            Dockerfile + config + server TLS certs
-auth/                FastAPI auth backend service
-tests/               MQTT + HTTP test scripts
-scripts/             setup script
-docs/                architecture documentation
+Dockerfile            Combined image (RabbitMQ + Python + auth)
+docker-entrypoint.sh  Container entrypoint
+Makefile              Build + test targets
+ca/                   OpenSSL CA + device certificate scripts
+rabbitmq/             RabbitMQ config + TLS certs
+auth/                 FastAPI auth backend source code
+tests/                MQTT + HTTP test scripts
+scripts/              Setup script
+docs/                 Architecture documentation
 ```

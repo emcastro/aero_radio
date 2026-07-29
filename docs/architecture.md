@@ -9,27 +9,28 @@ delegated via RabbitMQ's HTTP Auth Backend to a FastAPI service.
 ## Components
 
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                       Host (network_mode: host)                   │
-│                                                                   │
-│  ┌──────────────────────┐      ┌─────────────────────────┐        │
-│  │        RabbitMQ      │ HTTP │   FastAPI Auth Backend  │        │
-│  │                      │◄─────│                         │        │
-│  │  Ports:              │ auth │  POST /auth/user        │        │
-│  │  1883  MQTT (debug)  │      │  POST /auth/vhost       │        │
-│  │  8883  MQTTS (mTLS)  │      │  POST /auth/resource    │        │
-│  │  5672  AMQP          │      │  POST /auth/topic       │        │
-│  │  15672 Management UI │      │  Port 8000 (127.0.0.1)  │        │
-│  └───────────┬──────────┘      └─────────────────────────┘        │
-│              │                                                    │
-│              │ MQTTS :8883 (mTLS with client cert)                │
-│              │                                                    │
-│  ┌───────────┴──────────┐                                         │
-│  │   External Clients   │                                         │
-│  │ (IoT devices via     │                                         │
-│  │SIM7600, consumers)   │                                         │
-│  └──────────────────────┘                                         │
-└───────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      Host (network_mode: host)                  │
+│                                                                 │
+│  ┌─────────────────── Container: aero-rabbitmq ──────────────┐  │
+│  │                                                           │  │
+│  │  ┌──────────┐  HTTP 127.0.0.1:8000    ┌────────┐          │  │
+│  │  │ RabbitMQ │◄─────────────────────────│  Auth  │         │  │
+│  │  │          │  POST /auth/user         │ FastAPI│         │  │
+│  │  │ 1883 MQTT│  POST /auth/vhost        │        │         │  │
+│  │  │ 8883 MQTT│  POST /auth/resource     │ Port   │         │  │
+│  │  │ 5672 AMQP│  POST /auth/topic        │ 8000   │         │  │
+│  │  │15672 Mgmt│                          └────────┘         │  │
+│  │  └─────┬────┘                                             │  │
+│  │        │ MQTTS :8883 (mTLS with client cert)              │  │
+│  └────────┼──────────────────────────────────────────────────┘  │
+│           │                                                     │
+│  ┌────────┴──────────┐                                          │
+│  │  External Clients │                                          │
+│  │(IoT devices via   │                                          │
+│  │SIM7600, consumers)│                                          │
+│  └───────────────────┘                                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Authentication Flow
@@ -61,7 +62,7 @@ A device certificate's Common Name (CN) must match a key in the auth backend's `
 | 8883 | MQTTS    | RabbitMQ | mTLS required (device-facing) |
 | 5672 | AMQP     | RabbitMQ | For external consumers |
 | 15672 | HTTP     | RabbitMQ | Management UI (admin/admin) |
-| 8000 | HTTP     | Auth     | Internal auth backend (127.0.0.1 only) |
+| 8000 | HTTP     | Auth     | Dev debug only (0.0.0.0), do not expose in production |
 
 ## Development Setup
 
@@ -73,7 +74,7 @@ This will:
 1. Create the CA if missing
 2. Generate the RabbitMQ server certificate signed by the CA
 3. Generate a test device certificate (`device-test-001`)
-4. Build and start containers with `podman-compose`
+4. Build and start the container with `podman-compose`
 
 ## Adding a Device
 
