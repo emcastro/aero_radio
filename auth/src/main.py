@@ -4,13 +4,15 @@ from typing import Annotated
 from fastapi import FastAPI, Form
 from fastapi.responses import PlainTextResponse
 
-from src.auth_backend import (
+from auth_backend import (
     authenticate_device,
     check_resource_access,
     check_topic_access,
     check_vhost_access,
 )
 
+#logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AeroRadio2 Auth Backend")
