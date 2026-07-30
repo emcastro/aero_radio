@@ -3,7 +3,7 @@ set -e
 
 cd /app/auth
 while true; do
-    /app/venv/bin/uvicorn src.main:app --host 0.0.0.0 --port 8000
+    /app/venv/bin/uvicorn src.main:app --host 0.0.0.0 --port 8000 || true
     echo "uvicorn exited with $?, restarting..."
 done &
 

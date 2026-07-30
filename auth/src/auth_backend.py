@@ -34,7 +34,7 @@ DEVICES: dict[str, dict] = {
     "central": {
         "description": "Central process consuming all telemetry",
         "topics": {
-            "read": ["devices/+/telemetry/#"],
+            "read": ["devices/#"],
         },
     },
 }

@@ -90,6 +90,9 @@ make sync-deps
 make run-central    # central process, subscribes to devices/+/telemetry/#
 make run-iot        # IoT simulator, publishes 0..100..0
 
+# Or use AMQP for the central consumer
+make run-central-amqp
+
 # Stop
 podman-compose stop
 
@@ -157,6 +160,7 @@ Two Python client scripts are provided in `clients/`:
 |--------|--------|------|
 | `clients/iot_simulator.py` | `device-test-001` | Publishes ramp 0..100 then 100..0 every 0.5s on `devices/device-test-001/telemetry/value` |
 | `clients/central.py` | `central` | Subscribes to `devices/+/telemetry/#` and prints all received messages |
+| `clients/central_amqp.py` | `central` | Same as central.py but via AMQP (port 5672) using `pika` |
 
 Both connect via MQTTS (port 8883) with mTLS using `paho-mqtt` and `CallbackAPIVersion.VERSION2`.
 
@@ -167,6 +171,23 @@ Before running `central`, generate its certificate:
 ```
 
 Then add it to `auth/src/auth_backend.py`.
+
+### AMQP vs MQTT for the central consumer
+
+`central_amqp.py` uses RabbitMQ's native AMQP protocol (port 5672) instead of MQTTS. The IoT device publishes via MQTT, RabbitMQ routes internally to `amq.topic`, and the AMQP consumer binds with routing key `devices.#`.
+
+| Aspect | MQTT (`central.py`) | AMQP (`central_amqp.py`) |
+|--------|---------------------|--------------------------|
+| Port | 8883 (MQTTS, mTLS) | 5672 (AMQP, plain) |
+| Auth | Client certificate + password | Username/password (PLAIN) |
+| Reliability | QoS 0/1/2, no app-level ACK | Manual ACK, prefetch, durable queues |
+| Routing | Subscribe topic `devices/+/telemetry/#` | Bind to `amq.topic` with `devices.#` |
+| Code | Simpler (subscribe + loop) | More boilerplate (queue + bind + consume) |
+| Deps | `paho-mqtt` | `pika` |
+
+**Advantages of AMQP:** manual ACKs, durable queues survive restarts, richer protocol features, no mTLS overhead.
+
+**Disadvantages:** more code, plain password on the wire (no TLS on 5672), additional dependency (`pika`).
 
 ## Critical: Auth Backend Response Format
 
@@ -194,7 +215,7 @@ ca/                   OpenSSL CA + device certificate scripts
 rabbitmq/             RabbitMQ config + TLS certs
 auth/                 FastAPI auth backend source code
 tests/                MQTT + HTTP test scripts
-clients/              Python client scripts (IoT simulator + central)
+clients/              Python client scripts (IoT simulator + central + central AMQP)
 scripts/              Setup script
 docs/                 Architecture documentation
 ```
