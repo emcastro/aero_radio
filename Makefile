@@ -1,4 +1,4 @@
-.PHONY: up down rebuild logs sync-deps \
+.PHONY: up down rebuild logs sync-deps typecheck \
         test-connect test-subscribe test-publish test-amqp test-auth test-all \
         run-iot run-central run-central-amqp
 
@@ -19,6 +19,9 @@ logs-rabbitmq:
 
 sync-deps:
 	uv lock && uv export --locked --format requirements-txt -o auth/requirements.txt
+
+typecheck:
+	uv run pyright
 
 # Run
 
