@@ -4,8 +4,8 @@ import time
 import paho.mqtt.client as mqtt
 import pika
 
-# Hardcoded device + topic names: keep in sync with auth/src/auth_backend.py (DEVICES)
-# and ca/issued/ when topic names or device IDs change.
+# Hardcoded device + topic names: keep in sync with ca/issued/ when topic
+# names or device IDs change. MQTT is certificate-only: no username/password.
 BROKER = "localhost"
 AMQP_PORT = 5672
 AMQP_USER = "central"
@@ -60,7 +60,6 @@ def on_mqtt_publish(client, userdata, mid, reason_code, properties=None):
 client = mqtt.Client(client_id=MQTT_CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 client.tls_set(ca_certs=CA_CERT, certfile=CLIENT_CERT, keyfile=CLIENT_KEY)
 client.tls_insecure_set(True)
-client.username_pw_set(MQTT_CLIENT_ID, MQTT_CLIENT_ID)
 client.on_connect = on_mqtt_connect
 client.on_publish = on_mqtt_publish
 client.connect(BROKER, MQTT_PORT, 60)

@@ -27,7 +27,6 @@ def on_disconnect(client, userdata, rc, properties=None):
 client = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 client.tls_set(ca_certs=CA_CERT, certfile=CLIENT_CERT, keyfile=CLIENT_KEY)
 client.tls_insecure_set(True)
-client.username_pw_set(CLIENT_ID, CLIENT_ID)
 client.on_connect = on_connect
 client.on_message = on_message
 client.on_disconnect = on_disconnect

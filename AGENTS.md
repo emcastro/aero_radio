@@ -60,13 +60,27 @@ podman-compose restart
 
 http://localhost:15672 — default credentials: `admin` / `admin`
 
+Only the internal `admin` user has access. HTTP-authenticated MQTT/AMQP users
+get no management tag (`/auth/user` returns plain `"allow"`, not
+`"allow administrator"`).
+
 ## Adding a Device
 
 ```bash
 ./ca/generate-device-cert.sh <device-id>
 ```
 
-Then add the device to `auth/src/auth_backend.py` in the `DEVICES` dict.
+That's it — there is **no device registry**. Any certificate signed by the
+project CA authenticates over MQTT. To revoke a device temporarily, feed its CN
+to the auth backend's in-memory revocation list (lost on restart):
+
+```bash
+curl -X POST http://localhost:8000/auth/revoke -d 'cn=device-test-001'
+curl -X POST http://localhost:8000/auth/unrevoke -d 'cn=device-test-001'
+```
+
+Connections from a revoked CN are refused immediately. External processes can
+also call these endpoints to maintain the list.
 
 ## Commands
 
@@ -122,13 +136,12 @@ make test-auth
 make test-all
 ```
 
-> **Note:** The MQTT tests hardcode device IDs and topic names
+> **Note:** The MQTT tests hardcode device IDs, certificates and topic names
 > (`devices/<device>/telemetry/#`, `devices/<device>/commands/#`, …) that must
-> match the patterns in `auth/src/auth_backend.py` (`DEVICES`) and the
-> certificates in `ca/issued/`. Topic names and device IDs **will change** —
-> when they do, update these in sync:
-> `tests/test_subscribe.py`, `tests/test_publish.py`, `tests/test_amqp.py`,
-> and the `clients/` scripts.
+> match the certificates in `ca/issued/`. Topic names and device IDs **will
+> change** — when they do, update these in sync:
+> `tests/test_connect.py`, `tests/test_subscribe.py`, `tests/test_publish.py`,
+> `tests/test_amqp.py`, and the `clients/` scripts.
 
 > **Note:** The tests assume no other MQTT clients are active. `make run-iot`
 > (publishes on `devices/device-test-001/telemetry/value`) and `make run-central`
@@ -147,7 +160,16 @@ The auth backend listens on `0.0.0.0:8000` for dev debugging. Test directly:
 
 ```bash
 curl -X POST http://localhost:8000/auth/user \
-  -d 'username=device-test-001&password='
+  -d 'username=device-test-001&client_id=device-test-001'
+```
+
+The request above mirrors a cert-authenticated MQTT login: **no password field**
+(RabbitMQ drops it — the MQTT plugin excludes the password when it is the
+`none` sentinel for certificate logins). An AMQP service login is tested with
+a password and no `client_id`:
+
+```bash
+curl -X POST http://localhost:8000/auth/user -d 'username=central&password=central'
 ```
 
 **Do not expose port 8000 in production.** The auth backend is intended for internal use by RabbitMQ only.
@@ -162,11 +184,26 @@ mosquitto_pub \
   -h localhost -p 8883 \
   -t devices/device-test-001/telemetry/temp \
   -m '{"value":24}' \
-  -u device-test-001 -P device-test-001 \
   -d
 ```
 
-**Important:** The MQTT CONNECT packet must include a non-empty password matching the device ID. Despite `ssl_cert_login=true` authenticating via the client certificate CN, RabbitMQ's MQTT plugin still requires a password field in the CONNECT packet. Empty password results in `"no password provided"` and CONNACK code 4.
+**Important:** MQTT authenticates **by certificate only**. With
+`ssl_cert_login=true`, RabbitMQ derives the auth username from the client
+certificate CN and calls `/auth/user` **without a password field** (the MQTT
+plugin drops it). The CONNECT packet must therefore **not** carry a
+username/password:
+
+- A certificate signed by the project CA authenticates as its CN — there is
+  no device registry.
+- A CN on the auth backend's in-memory revocation list (fed via
+  `POST /auth/revoke`) is refused.
+- If a client sends username/password anyway, it is **refused**: RabbitMQ would
+  otherwise let the CONNECT credentials take priority over the certificate CN,
+  letting any certificate holder impersonate another device.
+
+AMQP service connections (no `client_id`) authenticate with
+username/password against `SERVICE_ACCOUNTS` in `auth/src/auth_backend.py`
+(e.g. `central` / `central`).
 
 ## Clients
 
@@ -178,15 +215,15 @@ Two Python client scripts are provided in `clients/`:
 | `clients/central.py` | `central` | Subscribes to `devices/+/telemetry/#` and prints all received messages |
 | `clients/central_amqp.py` | `central` | Same as central.py but via AMQP (port 5672) using `pika` |
 
-Both connect via MQTTS (port 8883) with mTLS using `paho-mqtt` and `CallbackAPIVersion.VERSION2`.
+Both MQTT clients connect via MQTTS (port 8883) with mTLS using `paho-mqtt` and
+`CallbackAPIVersion.VERSION2`, **without** username/password (certificate-only).
+`central_amqp.py` connects via AMQP (port 5672) with `central` / `central`.
 
 Before running `central`, generate its certificate:
 
 ```bash
 ./ca/generate-device-cert.sh central
 ```
-
-Then add it to `auth/src/auth_backend.py`.
 
 ### AMQP vs MQTT for the central consumer
 
@@ -195,7 +232,7 @@ Then add it to `auth/src/auth_backend.py`.
 | Aspect | MQTT (`central.py`) | AMQP (`central_amqp.py`) |
 |--------|---------------------|--------------------------|
 | Port | 8883 (MQTTS, mTLS) | 5672 (AMQP, plain) |
-| Auth | Client certificate + password | Username/password (PLAIN) |
+| Auth | Client certificate only | Username/password (PLAIN) |
 | Reliability | QoS 0/1/2, no app-level ACK | Manual ACK, prefetch, durable queues |
 | Routing | Subscribe topic `devices/+/telemetry/#` | Bind to `amq.topic` with `devices.#` |
 | Code | Simpler (subscribe + loop) | More boilerplate (queue + bind + consume) |
@@ -208,18 +245,16 @@ Then add it to `auth/src/auth_backend.py`.
 ## Critical: Auth Backend Response Format
 
 RabbitMQ's `rabbitmq_auth_backend_http` expects **plain text** responses (not JSON):
-- `/auth/user`: return `"allow administrator"` (valid user with management tag), `"allow"`, or `"deny"`
+- `/auth/user`: return `"allow"` or `"deny"`
 - `/auth/vhost`, `/auth/resource`, `/auth/topic`: return `"allow"` or `"deny"`
 
-## Topic Auth: Dot / Slash Conversion
+## Topic Auth
 
-RabbitMQ MQTT internally converts topic separator `/` to `.` when passing routing keys to the HTTP auth backend. For example, an MQTT subscribe to `devices/device-test-001/commands/#` reaches `/auth/topic` as:
-
-```
-routing_key = devices.device-test-001.commands.#
-```
-
-The auth backend's `check_topic_access` reverses this (`"."` → `"/"`) before matching against device patterns stored with `/` separators.
+MQTT topic access is **permissive**: any certificate-authenticated device may
+use any topic (`/auth/topic` always returns `"allow"`). If per-device topic
+isolation is needed later, note that RabbitMQ converts MQTT `/` to `.` when
+passing routing keys (e.g. `devices/device-test-001/commands/#` arrives as
+`devices.device-test-001.commands.#`); reverse it before matching.
 
 ## Project Layout
 

@@ -9,6 +9,12 @@ fi
 DEVICE_ID="$1"
 PASSWORD="${2:-}"
 
+# Must match CN_PATTERN in auth/src/auth_backend.py: no /, #, +, spaces, etc.
+if [[ ! "$DEVICE_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]]; then
+    echo "Error: device id must match [A-Za-z0-9][A-Za-z0-9_.-]* (got: $DEVICE_ID)"
+    exit 1
+fi
+
 CA_DIR="$(cd "$(dirname "$0")" && pwd)"
 PRIVATE_DIR="$CA_DIR/private"
 ISSUED_DIR="$CA_DIR/issued"

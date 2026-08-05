@@ -3,8 +3,8 @@ import time
 
 import paho.mqtt.client as mqtt
 
-# Hardcoded device + topic names: keep in sync with auth/src/auth_backend.py (DEVICES)
-# and ca/issued/ when topic names or device IDs change.
+# Hardcoded device + topic names: keep in sync with ca/issued/ when topic
+# names or device IDs change. MQTT is certificate-only: no username/password.
 BROKER = "localhost"
 MQTT_PORT = 8883
 CA_CERT = "ca/ca.pem"
@@ -58,7 +58,6 @@ def device_on_publish(client, userdata, mid, reason_code, properties=None):
 central = mqtt.Client(client_id="central", callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 central.tls_set(ca_certs=CA_CERT, certfile=CENTRAL_CERT, keyfile=CENTRAL_KEY)
 central.tls_insecure_set(True)
-central.username_pw_set("central", "central")
 central.on_connect = central_on_connect
 central.on_subscribe = central_on_subscribe
 central.on_message = central_on_message
@@ -73,7 +72,6 @@ print(f"[Central] Subscribed: {SUBSCRIBE_TOPIC}")
 device = mqtt.Client(client_id="device-test-001", callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 device.tls_set(ca_certs=CA_CERT, certfile=DEVICE_CERT, keyfile=DEVICE_KEY)
 device.tls_insecure_set(True)
-device.username_pw_set("device-test-001", "device-test-001")
 device.on_connect = device_on_connect
 device.on_publish = device_on_publish
 device.connect(BROKER, MQTT_PORT, 60)

@@ -61,14 +61,16 @@ else
 fi
 echo ""
 
-# --- Generate a test device certificate ---
-echo "[4/5] Generating test device certificate (device-test-001)..."
+# --- Generate test device certificates ---
+echo "[4/5] Generating test device certificates..."
 cd "$ROOT/ca"
-if [ ! -f issued/device-test-001.pem ]; then
-    bash generate-device-cert.sh "device-test-001"
-else
-    echo "  Test device certificate already exists, skipping."
-fi
+for dev in device-test-001 device-test-002 device-revoked-001; do
+    if [ ! -f "issued/$dev.pem" ]; then
+        bash generate-device-cert.sh "$dev"
+    else
+        echo "  Certificate for $dev already exists, skipping."
+    fi
+done
 echo ""
 
 # --- Start services ---
