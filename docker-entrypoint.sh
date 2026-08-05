@@ -3,7 +3,10 @@ set -e
 
 cd /app/auth/src
 while true; do
-    /app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir . || true
+    /app/venv/bin/uvicorn main:app \
+        --host 0.0.0.0 --port 8000 \
+        --reload \
+        --log-config log_config.yaml || true
     echo "uvicorn exited with $?, restarting..."
 done &
 

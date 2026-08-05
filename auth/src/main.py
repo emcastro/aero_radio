@@ -11,9 +11,7 @@ from auth_backend import (
     check_vhost_access,
 )
 
-#logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("auth")
 
 app = FastAPI(title="AeroRadio2 Auth Backend")
 
