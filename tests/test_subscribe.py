@@ -1,33 +1,48 @@
-import ssl, socket, struct
+import sys
+import time
 
-ctx = ssl.create_default_context(cafile="ca/ca.pem")
-ctx.load_cert_chain(
-    certfile="ca/issued/device-test-001.pem",
-    keyfile="ca/issued/device-test-001-key.pem",
-)
-ctx.check_hostname = False
+import paho.mqtt.client as mqtt
 
-sock = socket.create_connection(("localhost", 8883), timeout=5)
-ssock = ctx.wrap_socket(sock)
+# Hardcoded device + topic name: keep in sync with auth/src/auth_backend.py (DEVICES)
+# and ca/issued/ when topic names or device IDs change.
+BROKER = "localhost"
+PORT = 8883
+CA_CERT = "ca/ca.pem"
+CLIENT_CERT = "ca/issued/device-test-001.pem"
+CLIENT_KEY = "ca/issued/device-test-001-key.pem"
+CLIENT_ID = "device-test-001"
+TOPIC = "devices/device-test-001/commands/#"
 
-cid = b"device-test-001"
-un = b"device-test-001"
-pw = b"device-test-001"
-payload = (
-    struct.pack(">H", len(cid)) + cid
-    + struct.pack(">H", len(un)) + un
-    + struct.pack(">H", len(pw)) + pw
-)
-var = b"\x00\x04MQTT" + bytes([4, 0xC2]) + struct.pack(">H", 60) + payload
-ssock.sendall(bytes([0x10, len(var)]) + var)
-resp = ssock.recv(4)
-assert resp[3] == 0, "CONNECT FAIL"
+result = {}
 
-topic = b"devices/device-test-001/commands/#"
-sub = struct.pack(">H", 1) + struct.pack(">H", len(topic)) + topic + bytes([0])
-ssock.sendall(bytes([0x82, len(sub)]) + sub)
-ack = ssock.recv(5)
-ssock.close()
 
-print("SUBACK:", hex(ack[4]))
-exit(0 if ack[4] == 0 else 1)
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    if reason_code == 0:
+        client.subscribe(TOPIC)
+    else:
+        result["granted_qos"] = -1
+        client.disconnect()
+
+
+def on_subscribe(client, userdata, mid, reason_code_list, properties=None):
+    result["granted_qos"] = reason_code_list[0]
+    client.disconnect()
+
+
+client = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+client.tls_set(ca_certs=CA_CERT, certfile=CLIENT_CERT, keyfile=CLIENT_KEY)
+client.tls_insecure_set(True)
+client.username_pw_set(CLIENT_ID, CLIENT_ID)
+client.on_connect = on_connect
+client.on_subscribe = on_subscribe
+client.connect(BROKER, PORT, 60)
+client.loop_start()
+
+deadline = time.time() + 10
+while "granted_qos" not in result and time.time() < deadline:
+    time.sleep(0.1)
+
+client.loop_stop()
+
+print(f"SUBACK ({TOPIC}): QoS {result['granted_qos']}")
+sys.exit(0 if result["granted_qos"] == 0 else 1)

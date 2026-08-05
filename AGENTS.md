@@ -103,14 +103,17 @@ podman-compose down
 ## Testing
 
 ```bash
-# Quick MQTT connect test
+# Quick MQTT connect test (mTLS, paho-mqtt)
 make test-connect
 
-# Subscribe to commands topic
+# Subscribe to commands topic (paho-mqtt)
 make test-subscribe
 
-# Publish telemetry message
+# End-to-end MQTT round trip: device publishes telemetry, central receives it
 make test-publish
+
+# Cross-protocol round trip: MQTT publish received via AMQP (pika)
+make test-amqp
 
 # Direct HTTP test of all 4 auth endpoints
 make test-auth
@@ -118,6 +121,19 @@ make test-auth
 # Run all of the above
 make test-all
 ```
+
+> **Note:** The MQTT tests hardcode device IDs and topic names
+> (`devices/<device>/telemetry/#`, `devices/<device>/commands/#`, …) that must
+> match the patterns in `auth/src/auth_backend.py` (`DEVICES`) and the
+> certificates in `ca/issued/`. Topic names and device IDs **will change** —
+> when they do, update these in sync:
+> `tests/test_subscribe.py`, `tests/test_publish.py`, `tests/test_amqp.py`,
+> and the `clients/` scripts.
+
+> **Note:** The tests assume no other MQTT clients are active. `make run-iot`
+> (publishes on `devices/device-test-001/telemetry/value`) and `make run-central`
+> share client IDs and topics with the tests, so running them concurrently can
+> cause false failures. Stop those processes before `make test-all`.
 
 Individual test scripts in `tests/` can also be run directly:
 

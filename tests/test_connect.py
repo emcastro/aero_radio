@@ -1,27 +1,36 @@
-import ssl, socket, struct
+import sys
+import time
 
-ctx = ssl.create_default_context(cafile="ca/ca.pem")
-ctx.load_cert_chain(
-    certfile="ca/issued/device-test-001.pem",
-    keyfile="ca/issued/device-test-001-key.pem",
-)
-ctx.check_hostname = False
+import paho.mqtt.client as mqtt
 
-sock = socket.create_connection(("localhost", 8883), timeout=5)
-ssock = ctx.wrap_socket(sock)
+BROKER = "localhost"
+PORT = 8883
+CA_CERT = "ca/ca.pem"
+CLIENT_CERT = "ca/issued/device-test-001.pem"
+CLIENT_KEY = "ca/issued/device-test-001-key.pem"
+CLIENT_ID = "device-test-001"
 
-cid = b"device-test-001"
-un = b"device-test-001"
-pw = b"device-test-001"
-payload = (
-    struct.pack(">H", len(cid)) + cid
-    + struct.pack(">H", len(un)) + un
-    + struct.pack(">H", len(pw)) + pw
-)
-var = b"\x00\x04MQTT" + bytes([4, 0xC2]) + struct.pack(">H", 60) + payload
-ssock.sendall(bytes([0x10, len(var)]) + var)
-resp = ssock.recv(4)
-ssock.close()
+result = {}
 
-print("CONNACK:", resp[3])
-exit(0 if resp[3] == 0 else 1)
+
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    result["reason_code"] = reason_code
+    client.disconnect()
+
+
+client = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+client.tls_set(ca_certs=CA_CERT, certfile=CLIENT_CERT, keyfile=CLIENT_KEY)
+client.tls_insecure_set(True)
+client.username_pw_set(CLIENT_ID, CLIENT_ID)
+client.on_connect = on_connect
+client.connect(BROKER, PORT, 60)
+client.loop_start()
+
+deadline = time.time() + 10
+while "reason_code" not in result and time.time() < deadline:
+    time.sleep(0.1)
+
+client.loop_stop()
+
+print("CONNACK:", result["reason_code"])
+sys.exit(0 if result["reason_code"] == 0 else 1)
