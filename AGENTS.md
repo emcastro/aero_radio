@@ -94,9 +94,6 @@ make rebuild
 # Logs
 make logs
 
-# RabbitMQ logs only
-make logs-rabbitmq
-
 # Sync Python deps (regenerate uv.lock + requirements.txt)
 make sync-deps
 
@@ -117,7 +114,7 @@ podman-compose down
 ## Testing
 
 ```bash
-# Quick MQTT connect test (mTLS, paho-mqtt)
+# Quick MQTT connect test (mTLS (mutual-TLS), paho-mqtt)
 make test-connect
 
 # Subscribe to commands topic (paho-mqtt)
