@@ -5,8 +5,8 @@ rabbitmq/tls/
 **/*.pem
 **/*.crt
 
-# Temp files
-tmp/
+# Downloaded OGN data / intermediate output (never committed)
+data/
 
 # Python
 __pycache__/

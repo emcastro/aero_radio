@@ -1,6 +1,7 @@
 .PHONY: up down rebuild logs sync-deps typecheck \
         test-connect test-subscribe test-publish test-amqp test-auth test-all \
-        run-iot run-central run-central-amqp
+        run-iot run-central run-central-amqp \
+        download-ogn clean-ogn
 
 up:
 	podman-compose up -d
@@ -15,7 +16,7 @@ logs:
 	podman-compose logs -f
 
 sync-deps:
-	uv lock && uv export --locked --format requirements-txt -o auth/requirements.txt
+	uv lock && uv export --locked --no-dev --format requirements-txt -o auth/requirements.txt
 
 typecheck:
 	uv run pyright
@@ -50,3 +51,11 @@ test-auth:
 
 test-all: test-connect test-subscribe test-publish test-amqp test-auth
 	@echo 'All tests: PASS'
+
+# OGN data pipeline: phase 1 (slow, real-time stream) then phase 2 (DuckDB, ~3s).
+
+download-ogn:
+	scripts/download_ogn.sh
+
+clean-ogn:
+	scripts/clean_ogn.sh
