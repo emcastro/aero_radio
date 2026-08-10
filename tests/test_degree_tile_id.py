@@ -16,7 +16,7 @@ from degree_tile_id import (
     encode_bbox,
 )
 
-# Tile format: [NS]dd[A-Z][EW]ddd[A-Z] — exactly 8 chars, uppercase letters + digits
+# Tile format: [NS]dd[A-Z][EW]ddd[A-Z] — exactly 9 chars, uppercase letters + digits
 TILE_RE = re.compile(r"[NS]\d{2}[A-Z][EW]\d{3}[A-Z]")
 
 # A handful of world cities — round-trip must hold for each.
@@ -68,9 +68,9 @@ class TestTileFormat:
 
     @pytest.mark.parametrize("lon,lat", KNOWN_POINTS)
     def test_tile_fixed_length(self, lon, lat):
-        # Each tile_id is exactly 8 characters: [NS]dd[A-Z][EW]ddd[A-Z]
+        # Each tile_id is exactly 9 characters: [NS]dd[A-Z][EW]ddd[A-Z]
         t = lonlat_to_tileid(lon, lat)
-        assert len(t) == 8, f"tile_id {t!r} length {len(t)}, expected 8"
+        assert len(t) == 9, f"tile_id {t!r} length {len(t)}, expected 8"
 
     @pytest.mark.parametrize("lon,lat", KNOWN_POINTS)
     def test_tile_starts_with_ns(self, lon, lat):

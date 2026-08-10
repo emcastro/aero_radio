@@ -23,6 +23,11 @@ __all__ = [
     "encode_bbox",
 ]
 
+import math
+
+SUBDEGREE_TILE_COUNT = 10  # A-J
+SUBDEGREE_LETTERS = "ABCDEFGHIJ"
+
 
 def lonlat_to_tileid(lon: float, lat: float) -> str:
     """
@@ -38,7 +43,21 @@ def lonlat_to_tileid(lon: float, lat: float) -> str:
     Raises:
         ValueError: if lon or lat are out of range
     """
-    raise NotImplementedError("TODO: implement lonlat encoding")
+
+    abs_lon = abs(lon)
+    abs_lat = abs(lat)
+
+    int_lon = int(abs_lon)
+    int_lat = int(abs_lat)
+
+    subdef_lon = int((abs_lon - int_lon) * math.cos(int_lat / 180 * math.pi) * SUBDEGREE_TILE_COUNT)
+    subdef_lat = int((abs_lat - int_lat) * SUBDEGREE_TILE_COUNT)
+
+    ns = 'N' if lat >= 0 else 'S'
+    ew = 'E' if lon >= 0 else 'W'
+
+
+    return f"{ns}{int_lat:02d}{SUBDEGREE_LETTERS[subdef_lat]}{ew}{int_lon:03d}{SUBDEGREE_LETTERS[subdef_lon]}"
 
 
 def tileid_to_bbox(t: str) -> tuple[float, float, float, float]:
