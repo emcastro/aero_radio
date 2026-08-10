@@ -22,10 +22,11 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = ["clients"]
 addopts = "--ignore=tests_integ"
 
 [tool.pyright]
+extraPaths = ["clients"]
 # paho.mqtt.client doesn't re-export CallbackAPIVersion (it lives in paho.mqtt.enums)
 # even though the paho docs recommend accessing it via mqtt.CallbackAPIVersion.
 reportPrivateImportUsage = false

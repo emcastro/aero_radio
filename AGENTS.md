@@ -2,6 +2,8 @@
 
 > Do not commit without an explicit user request. A single "commit" order is valid only once; re-ask for each subsequent commit.
 
+> **YAGNI** — You Aren't Gonna Need It. Do not add configuration, code, or abstractions "just in case." Only add what the current task requires. When in doubt, leave it out. Remove unused defaults and speculative forward-compatibility.
+
 MQTT-based IoT messaging system with RabbitMQ, mutual TLS authentication, and a FastAPI auth backend.
 
 ## Quick Start
