@@ -19,6 +19,7 @@ dev = [
     "duckdb>=1.1.0",
     "requests>=2.31.0",
     "pytest>=9.1.1",
+    "pylint>=3.3.0",
 ]
 
 [tool.pytest.ini_options]
@@ -30,3 +31,49 @@ extraPaths = ["clients"]
 # paho.mqtt.client doesn't re-export CallbackAPIVersion (it lives in paho.mqtt.enums)
 # even though the paho docs recommend accessing it via mqtt.CallbackAPIVersion.
 reportPrivateImportUsage = false
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+# pylint run from the repo root: `uv run pylint .` (or `make lint`).
+[tool.pylint.main]
+ignore = ["venv", ".venv", "tests_integ"]
+# Make `from auth_backend import ...`, `from degree_tile_id import ...` and
+# `from download_common import ...` resolvable.
+init-hook = "import sys; sys.path.insert(0, 'clients'); sys.path.insert(0, 'auth/src'); sys.path.insert(0, 'scripts')"
+
+[tool.pylint.format]
+max-line-length = 150
+
+[tool.pylint."messages control"]
+
+# https://pylint.pycqa.org/en/latest/user_guide/messages/messages_overview.html#fatal-category
+disable = [
+  "not-context-manager",
+  "missing-module-docstring",
+  "missing-function-docstring",
+  "missing-class-docstring",
+  "wrong-import-order",
+  "wildcard-import",
+  "unused-wildcard-import",
+  "use-implicit-booleaness-not-comparison",
+  "no-else-return",
+  "too-many-locals",
+  "too-many-arguments",
+  "too-few-public-methods",
+  "too-many-instance-attributes",
+  "unspecified-encoding",
+  "global-statement",
+  # paho/pika callbacks must keep the protocol-mandated signature, e.g. the
+  # first positional parameter named `client`; unused ones are normal.
+  "unused-argument",
+  "redefined-outer-name",
+  # RabbitMQ auth backend endpoints have a fixed positional signature
+  # (username, vhost, resource, name, permission, routing_key).
+  "too-many-positional-arguments",
+  # download_adsb.py intentionally swallows all errors and keeps polling.
+  "broad-exception-caught",
+]

@@ -15,7 +15,7 @@ def process_beacon(raw_message: str) -> None:
     try:
         beacon = parse(raw_message)
     except AprsParseError as e:
-        print("Error, {}".format(e.message), file=sys.stderr, flush=True)
+        print(f"Error, {e.message}", file=sys.stderr, flush=True)
         return
     if beacon.get("aprs_type") == "position":
         emit(beacon)

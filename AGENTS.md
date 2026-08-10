@@ -1,6 +1,7 @@
 # AeroRadio2
 
 > Do not commit without an explicit user request. A single "commit" order is valid only once; re-ask for each subsequent commit.
+> Do not modify git staging unless preparing to commit on explicit user request.
 
 > **YAGNI** — You Aren't Gonna Need It. Do not add configuration, code, or abstractions "just in case." Only add what the current task requires. When in doubt, leave it out. Remove unused defaults and speculative forward-compatibility.
 
@@ -293,7 +294,7 @@ rabbitmq/             RabbitMQ config + TLS certs
 auth/                 FastAPI auth backend source code
 tests/                Unit tests (pytest)
 tests_integ/          Integration test scripts (standalone, require running services)
-clients/              Python client scripts (IoT simulator + central + central AMQP)
+clients/              Python client scripts + degree_tile_id library
 scripts/              Setup script + OGN/ADSB downloaders
 docs/                 Architecture documentation
 ```

@@ -1,4 +1,4 @@
-.PHONY: up down rebuild logs sync-deps typecheck \
+.PHONY: up down rebuild logs sync-deps typecheck lint \
         test-unit test-connect test-subscribe test-publish test-amqp test-auth test-all \
         run-iot run-central run-central-amqp \
         download-ogn clean-ogn download-adsb download-all
@@ -20,6 +20,9 @@ sync-deps:
 
 typecheck:
 	uv run pyright
+
+lint:
+	uv run pylint .
 
 # Run
 
