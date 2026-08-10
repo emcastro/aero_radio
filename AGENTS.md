@@ -1,6 +1,6 @@
 # AeroRadio2
 
-> Ne pas commiter sans ordre exprès de l'utilisateur.
+> Do not commit without an explicit user request. A single "commit" order is valid only once; re-ask for each subsequent commit.
 
 MQTT-based IoT messaging system with RabbitMQ, mutual TLS authentication, and a FastAPI auth backend.
 
