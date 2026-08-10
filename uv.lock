@@ -20,6 +20,7 @@ dev = [
     { name = "duckdb" },
     { name = "ogn-client" },
     { name = "pyright" },
+    { name = "requests" },
 ]
 
 [package.metadata]
@@ -37,6 +38,7 @@ dev = [
     { name = "duckdb", specifier = ">=1.1.0" },
     { name = "ogn-client", specifier = ">=1.0.0" },
     { name = "pyright", specifier = ">=1.1.300" },
+    { name = "requests", specifier = ">=2.31.0" },
 ]
 
 [[package]]

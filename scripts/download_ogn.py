@@ -1,13 +1,14 @@
-import json
 import sys
 
 from ogn.client import AprsClient
 from ogn.parser import AprsParseError, parse
 
+from download_common import CENTRE_LAT, CENTRE_LON, RADIUS_KM, emit
+
 # OpenGliderNetwork APRS stream to subscribe to.
-# r/LAT/LON/RADIUS  -> 590 km radius box centred on France (IGN: kept on purpose).
+# r/LAT/LON/RADIUS  -> 590 km radius box centred on France (centre shared with the ADSB downloader).
 OGN_APRS_USER = "N0CALL"
-OGN_FILTER = "r/46.606111/1.875278/590"
+OGN_FILTER = f"r/{CENTRE_LAT}/{CENTRE_LON}/{RADIUS_KM}"
 
 
 def process_beacon(raw_message: str) -> None:
@@ -17,7 +18,7 @@ def process_beacon(raw_message: str) -> None:
         print("Error, {}".format(e.message), file=sys.stderr, flush=True)
         return
     if beacon.get("aprs_type") == "position":
-        print(json.dumps(beacon, sort_keys=True, default=str), flush=True)
+        emit(beacon)
 
 
 def main() -> None:

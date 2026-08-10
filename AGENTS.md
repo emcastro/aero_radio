@@ -111,6 +111,23 @@ podman-compose stop
 podman-compose down
 ```
 
+## OGN / ADSB Download Pipeline
+
+Targets: `make download-ogn`, `make download-adsb`, `make download-all`, `make clean-ogn`.
+Outputs go to `data/<src>-%Y%m%d-%H%M.jsonl` (+ `.log`).
+
+- All downloaders are infinite loops; Ctrl-C stops them cleanly.
+- `download_all.sh` runs OGN + ADSB in parallel. Any exit without Ctrl-C
+  (trap not fired) is treated as a failure: OGN can exit **0** silently after
+  exhausting its reconnect retries, so exit codes are not trustworthy.
+- adsb.lol `/v2/point` always returns `now` (epoch ms); read it with
+  `data["now"]` (a missing key then fails loudly instead of using a wrong
+  local timestamp). Always `raise_for_status()` before `.json()`: a 429/5xx
+  body parses fine and would silently yield zero records.
+- Testing gotcha: `timeout -s INT <n> make download-all` only signals `make`,
+  not the whole process group — verify no lingering `download_*` processes
+  remain afterwards.
+
 ## Testing
 
 ```bash
@@ -264,6 +281,6 @@ rabbitmq/             RabbitMQ config + TLS certs
 auth/                 FastAPI auth backend source code
 tests/                MQTT + HTTP test scripts
 clients/              Python client scripts (IoT simulator + central + central AMQP)
-scripts/              Setup script
+scripts/              Setup script + OGN/ADSB downloaders
 docs/                 Architecture documentation
 ```

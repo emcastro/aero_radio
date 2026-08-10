@@ -17,7 +17,9 @@ dev = [
     "pyright>=1.1.300",
     "ogn-client>=1.0.0",
     "duckdb>=1.1.0",
+    "requests>=2.31.0",
 ]
+
 
 [tool.pyright]
 # paho.mqtt.client doesn't re-export CallbackAPIVersion (it lives in paho.mqtt.enums)

@@ -33,7 +33,7 @@ CREATE TABLE ogn AS (
 	ORDER BY address, timestamp
 );
 
--- Suppression des beacons où il n'y a pas corrélation address/name
+-- Remove beacons with no address/name correlation
 DELETE FROM ogn WHERE name IN (
 	SELECT name
 	FROM ogn
@@ -47,7 +47,7 @@ DELETE FROM ogn WHERE address IN (
 	HAVING count(DISTINCT name) = 0 OR count(DISTINCT name) > 1
 );
 
--- Suppression des trajectoires trop courtes
+-- Remove tracks that are too short
 DELETE FROM ogn WHERE address IN (
 	SELECT address
 	FROM ogn

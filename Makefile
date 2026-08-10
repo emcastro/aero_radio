@@ -1,7 +1,7 @@
 .PHONY: up down rebuild logs sync-deps typecheck \
         test-connect test-subscribe test-publish test-amqp test-auth test-all \
         run-iot run-central run-central-amqp \
-        download-ogn clean-ogn
+        download-ogn clean-ogn download-adsb download-all
 
 up:
 	podman-compose up -d
@@ -56,6 +56,12 @@ test-all: test-connect test-subscribe test-publish test-amqp test-auth
 
 download-ogn:
 	scripts/download_ogn.sh
+
+download-adsb:
+	scripts/download_adsb.sh
+
+download-all:
+	scripts/download_all.sh
 
 clean-ogn:
 	scripts/clean_ogn.sh
