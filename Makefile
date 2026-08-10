@@ -1,5 +1,5 @@
 .PHONY: up down rebuild logs sync-deps typecheck \
-        test-connect test-subscribe test-publish test-amqp test-auth test-all \
+        test-unit test-connect test-subscribe test-publish test-amqp test-auth test-all \
         run-iot run-central run-central-amqp \
         download-ogn clean-ogn download-adsb download-all
 
@@ -34,22 +34,25 @@ run-central-amqp:
 
 # Tests
 
+test-unit:
+	uv run pytest -v
+
 test-connect:
-	uv run python tests/test_connect.py
+	uv run python tests_integ/test_connect.py
 
 test-subscribe:
-	uv run python tests/test_subscribe.py
+	uv run python tests_integ/test_subscribe.py
 
 test-publish:
-	uv run python tests/test_publish.py
+	uv run python tests_integ/test_publish.py
 
 test-amqp:
-	uv run python tests/test_amqp.py
+	uv run python tests_integ/test_amqp.py
 
 test-auth:
-	uv run python tests/test_auth.py
+	uv run python tests_integ/test_auth.py
 
-test-all: test-connect test-subscribe test-publish test-amqp test-auth
+test-all: test-unit test-connect test-subscribe test-publish test-amqp test-auth
 	@echo 'All tests: PASS'
 
 # OGN data pipeline: phase 1 (slow, real-time stream) then phase 2 (DuckDB, ~3s).

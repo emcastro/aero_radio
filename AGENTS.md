@@ -130,6 +130,15 @@ Outputs go to `data/<src>-%Y%m%d-%H%M.jsonl` (+ `.log`).
 
 ## Testing
 
+### Unit tests (pytest)
+
+```bash
+# Run all unit tests
+make test-unit
+```
+
+### Integration test scripts (standalone, require running services)
+
 ```bash
 # Quick MQTT connect test (mTLS (mutual-TLS), paho-mqtt)
 make test-connect
@@ -154,18 +163,19 @@ make test-all
 > (`devices/<device>/telemetry/#`, `devices/<device>/commands/#`, …) that must
 > match the certificates in `ca/issued/`. Topic names and device IDs **will
 > change** — when they do, update these in sync:
-> `tests/test_connect.py`, `tests/test_subscribe.py`, `tests/test_publish.py`,
-> `tests/test_amqp.py`, and the `clients/` scripts.
+> `tests_integ/test_connect.py`, `tests_integ/test_subscribe.py`,
+> `tests_integ/test_publish.py`, `tests_integ/test_amqp.py`, and the `clients/`
+> scripts.
 
 > **Note:** The tests assume no other MQTT clients are active. `make run-iot`
 > (publishes on `devices/device-test-001/telemetry/value`) and `make run-central`
 > share client IDs and topics with the tests, so running them concurrently can
 > cause false failures. Stop those processes before `make test-all`.
 
-Individual test scripts in `tests/` can also be run directly:
+Individual test scripts in `tests_integ/` can also be run directly:
 
 ```bash
-uv run python3 tests/test_auth.py
+uv run python3 tests_integ/test_auth.py
 ```
 
 ## Auth API Debug
@@ -279,7 +289,8 @@ Makefile              Build + test targets
 ca/                   OpenSSL CA + device certificate scripts
 rabbitmq/             RabbitMQ config + TLS certs
 auth/                 FastAPI auth backend source code
-tests/                MQTT + HTTP test scripts
+tests/                Unit tests (pytest)
+tests_integ/          Integration test scripts (standalone, require running services)
 clients/              Python client scripts (IoT simulator + central + central AMQP)
 scripts/              Setup script + OGN/ADSB downloaders
 docs/                 Architecture documentation
